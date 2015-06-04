@@ -1,0 +1,353 @@
+<html>
+	<head>
+		<title></title>
+	</head>
+	<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+	<script>
+		jQuery(document).ready(function() {
+			jQuery('#submit').click(function(){
+				var options = {
+					'name' : {
+						required: true
+					},
+					'email' : {
+						required: true,
+						email: true
+					},
+					'number' : {
+						required: true,
+						digits: true
+					},
+					'select' : {
+						required: true
+					},
+					'select-multiple' : {
+						required: true
+					},
+					'radio' : {
+						required: true
+					},
+					'checkbox' : {
+						required: true
+					},
+					'checkbox-single' : {
+						required: true
+					},
+					'multiple-emails' : {
+						required: true,
+						multipleEmails: true
+					}
+				};
+			
+				if(customValidation(options)){
+					alert('Form validated!');
+				}else{
+					alert('Form not validated!');
+				}
+			});
+		});
+	
+		function customValidation(options, bindEvents){
+			/***
+				Function is based on jQuery Validation Plugin v1.13.1 but doesn't require a <form> tag
+			
+				Add custom validations in this function as required
+				
+				Currently supported validations are:
+				
+				Required - Field cannot be blank
+				Email - Validates an email address
+				Mutliple Emails - Validates mutliple email addresses
+				Number - Validates a decimal number
+				Digits - Validates digits only
+				
+				Todo:
+				
+				Equal To validation
+				Allow specifying parent element for Checkbox and Radio elements to apply an error class
+				Allow specifying custom error and success functions through function parameter and individual options			
+			***/
+			
+			var fieldsValid = true;
+			bindEvents = (typeof bindEvents === 'undefined') ? true : bindEvents;
+			
+			jQuery.each(options, function(elementIdorName, rules){
+				var element = (jQuery('#' + elementIdorName).length) ? jQuery('#' + elementIdorName) : jQuery('input[name=' + elementIdorName + ']:first');
+				var elementType = element.prop('type');
+				var elementName = element.prop('name');
+				
+				var elementValid = true;
+				
+				// First remove any validation errors
+				if((/radio|checkbox/i).test(elementType)){
+					jQuery('input[name=' + elementIdorName + ']').each(function (){
+						if(jQuery(this).hasClass('error')){
+							jQuery(this).removeClass('error');
+						}
+					});
+				}else{
+					if(element.hasClass('error')){
+						element.removeClass('error');
+					}
+				}
+				
+				jQuery.each(rules, function(rule, ruleOption){
+					// Required
+					if(rule == 'required' && ruleOption == true){
+						// Select
+						if(elementType && (elementType.toLowerCase() === 'select' || elementType.toLowerCase() === 'select-one' || elementType.toLowerCase() === 'select-mulitple')){
+							var val = element.val();
+							if(val && val.length > 0){
+								// Do nothing
+							}else{
+								elementValid = false;
+							}
+						}
+						
+						// Checkbox and Radio
+						if((/radio|checkbox/i).test(elementType)){
+							if(jQuery('input[name=' + elementName + ']:checked').length > 0){
+								// Do nothing
+							}else{
+								elementValid = false;
+							}
+						}
+						
+						// Text, Email, Number and Textarea
+						if(jQuery.trim(element.val()).length > 0){
+							// Do nothing
+						}else{
+							elementValid = false;
+						}
+						
+						if(!elementValid){
+							fieldsValid = false;
+							if((/radio|checkbox/i).test(elementType)){
+								jQuery('input[name=' + elementIdorName + ']').each(function (){
+									jQuery(this).addClass('error');
+								});
+							}else{
+								element.addClass('error');
+							}
+						}
+					}
+					
+					// Email
+					if(rule == 'email' && ruleOption == true){
+						if((/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/).test(element.val())){
+							// Do nothing
+						}else{
+							elementValid = false;
+						}
+						
+						if(!elementValid){
+							fieldsValid = false;
+							element.addClass('error');
+						}
+					}
+					
+					// Number
+					if(rule == 'number' && ruleOption == true){
+						if((/^-?(?:\d+|\d{1,3}(?:,\d{3})+)?(?:\.\d+)?$/).test(element.val())){
+							// Do nothing
+						}else{
+							elementValid = false;
+						}
+						
+						if(!elementValid){
+							fieldsValid = false;
+							element.addClass('error');
+						}
+					}
+					
+					// Digits
+					if(rule == 'digits' && ruleOption == true){
+						if((/^\d+$/).test(element.val())){
+							// Do nothing
+						}else{
+							elementValid = false;
+						}
+						
+						if(!elementValid){
+							fieldsValid = false;
+							element.addClass('error');
+						}
+					}
+					
+					// Multiple Emails
+					if(rule == 'multipleEmails' && ruleOption == true){
+						var emailsArr = element.val().replace(/\s/g, '').split(/,|;/);
+
+						for(var i = 0; i < emailsArr.length; i++){
+							if((/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/).test(emailsArr[i])){
+								// Do nothing
+							}else{
+								elementValid = false;
+							}
+						}
+						
+						if(!elementValid){
+							fieldsValid = false;
+							element.addClass('error');
+						}
+					}
+				});
+				
+				if(bindEvents){
+					console.log('Events binded');
+					var currentOption = {};
+					currentOption[elementIdorName] = rules;
+					
+					// Bind events to validate on the fly
+					switch(elementType){
+						case 'text':
+						case 'email':
+						case 'number':
+						case 'textarea':
+							element.unbind('keyup.customValidation-' + elementName).bind('keyup.customValidation-' + elementName, function(e){
+								return customValidation(currentOption, false);
+							});
+						break;
+						case 'radio':
+						case 'checkbox':
+							jQuery('input[name=' + elementIdorName + ']').each(function (){
+								jQuery(this).unbind('click.customValidation-' + elementName).bind('click.customValidation-' + elementName, function(e){
+									return customValidation(currentOption, false);
+								});
+							});
+						break;
+						case 'select':
+						case 'select-one':
+						case 'select-multiple':
+							element.unbind('change.customValidation-' + elementName).bind('change.customValidation-' + elementName, function(e){
+								return customValidation(currentOption, false);
+							});
+						break;
+					}
+				}
+			});
+			
+			return fieldsValid;
+		}
+	</script>
+	<body>
+		<input type="text" name="name" id="name" />
+		<br /><br />
+		<input type="email" name="email" id="email" />
+		<br /><br />
+		<input type="number" name="number" id="number" />
+		<br /><br />
+		<select name="select" id="select">
+			<option></option>
+			<option>Option 1</option>
+			<option>Option 2</option>
+			<option>Option 3</option>
+		</select>
+		<br /><br />
+		<select name="select-multiple" id="select-multiple" multiple>
+			<option></option>
+			<option>Option 1</option>
+			<option>Option 2</option>
+			<option>Option 3</option>
+			<option>Option 4</option>
+			<option>Option 5</option>
+			<option>Option 6</option>
+		</select>
+		<br /><br />
+		<input type="radio" name="radio" />Yes
+		<input type="radio" name="radio" />No
+		<br /><br />
+		<input type="checkbox" name="checkbox" />Yes
+		<input type="checkbox" name="checkbox" />No
+		<br /><br />
+		<input type="checkbox" name="checkbox-single" id="checkbox-single" />No
+		<br /><br />
+		<textarea name="multiple-emails" id="multiple-emails"></textarea>
+		<br /><br />
+		<button id="submit">Submit</button>
+		<hr />
+		How to use:
+		<br /><br />
+		<xmp>
+			<input type="text" name="name" id="name" />
+			<br /><br />
+			<input type="email" name="email" id="email" />
+			<br /><br />
+			<input type="number" name="number" id="number" />
+			<br /><br />
+			<select name="select" id="select">
+				<option></option>
+				<option>Option 1</option>
+				<option>Option 2</option>
+				<option>Option 3</option>
+			</select>
+			<br /><br />
+			<select name="select-multiple" id="select-multiple" multiple>
+				<option></option>
+				<option>Option 1</option>
+				<option>Option 2</option>
+				<option>Option 3</option>
+				<option>Option 4</option>
+				<option>Option 5</option>
+				<option>Option 6</option>
+			</select>
+			<br /><br />
+			<input type="radio" name="radio" />Yes
+			<input type="radio" name="radio" />No
+			<br /><br />
+			<input type="checkbox" name="checkbox" />Yes
+			<input type="checkbox" name="checkbox" />No
+			<br /><br />
+			<input type="checkbox" name="checkbox-single" id="checkbox-single" />No
+			<br /><br />
+			<textarea name="multiple-emails" id="multiple-emails"></textarea>
+			<br /><br />
+			<button id="submit">Submit</button>
+			
+			<script>
+				jQuery(document).ready(function() {
+					jQuery('#submit').click(function(){
+						var options = {
+							'name' : {
+								required: true
+							},
+							'email' : {
+								required: true,
+								email: true
+							},
+							'number' : {
+								required: true,
+								digits: true
+							},
+							'select' : {
+								required: true
+							},
+							'select-multiple' : {
+								required: true
+							},
+							'radio' : {
+								required: true
+							},
+							'checkbox' : {
+								required: true
+							},
+							'checkbox-single' : {
+								required: true
+							},
+							'multiple-emails' : {
+								required: true,
+								multipleEmails: true
+							}
+						};
+					
+						if(customValidation(options)){
+							alert('Form validated!');
+						}else{
+							alert('Form not validated!');
+						}
+					});
+				});
+			</script>
+		</xmp>
+	</body>
+</html>
