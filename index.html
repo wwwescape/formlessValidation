@@ -2,6 +2,9 @@
 	<head>
 		<title></title>
 	</head>
+	<style>
+		#errorContainer { color: #ff0000; }
+	</style>
 	<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
 	<script>
 		jQuery(document).ready(function() {
@@ -46,8 +49,8 @@
 				}
 			});
 		});
-	
-		function customValidation(options, bindEvents){
+
+		function customValidation(options){
 			/***
 				Function is based on jQuery Validation Plugin v1.13.1 but doesn't require a <form> tag
 			
@@ -69,7 +72,7 @@
 			***/
 			
 			var fieldsValid = true;
-			bindEvents = (typeof bindEvents === 'undefined') ? true : bindEvents;
+			var errorMessages = jQuery('#errorMessages');
 			
 			jQuery.each(options, function(elementIdorName, rules){
 				var element = (jQuery('#' + elementIdorName).length) ? jQuery('#' + elementIdorName) : jQuery('input[name=' + elementIdorName + ']:first');
@@ -79,17 +82,7 @@
 				var elementValid = true;
 				
 				// First remove any validation errors
-				if((/radio|checkbox/i).test(elementType)){
-					jQuery('input[name=' + elementIdorName + ']').each(function (){
-						if(jQuery(this).hasClass('error')){
-							jQuery(this).removeClass('error');
-						}
-					});
-				}else{
-					if(element.hasClass('error')){
-						element.removeClass('error');
-					}
-				}
+				jQuery('.error-' + elementName).hide();
 				
 				jQuery.each(rules, function(rule, ruleOption){
 					// Required
@@ -122,12 +115,10 @@
 						
 						if(!elementValid){
 							fieldsValid = false;
-							if((/radio|checkbox/i).test(elementType)){
-								jQuery('input[name=' + elementIdorName + ']').each(function (){
-									jQuery(this).addClass('error');
-								});
+							if(jQuery('.error-' + elementName).length == 0) {
+								errorMessages.append('<div class="error-' + elementName + '">' + elementName + '</div>');
 							}else{
-								element.addClass('error');
+								jQuery('.error-' + elementName).show();
 							}
 						}
 					}
@@ -142,7 +133,11 @@
 						
 						if(!elementValid){
 							fieldsValid = false;
-							element.addClass('error');
+							if(jQuery('.error-' + elementName).length == 0) {
+								errorMessages.append('<div class="error-' + elementName + '">' + elementName + '</div>');
+							}else{
+								jQuery('.error-' + elementName).show();
+							}
 						}
 					}
 					
@@ -156,7 +151,11 @@
 						
 						if(!elementValid){
 							fieldsValid = false;
-							element.addClass('error');
+							if(jQuery('.error-' + elementName).length == 0) {
+								errorMessages.append('<div class="error-' + elementName + '">' + elementName + '</div>');
+							}else{
+								jQuery('.error-' + elementName).show();
+							}
 						}
 					}
 					
@@ -170,7 +169,11 @@
 						
 						if(!elementValid){
 							fieldsValid = false;
-							element.addClass('error');
+							if(jQuery('.error-' + elementName).length == 0) {
+								errorMessages.append('<div class="error-' + elementName + '">' + elementName + '</div>');
+							}else{
+								jQuery('.error-' + elementName).show();
+							}
 						}
 					}
 					
@@ -188,42 +191,43 @@
 						
 						if(!elementValid){
 							fieldsValid = false;
-							element.addClass('error');
+							if(jQuery('.error-' + elementName).length == 0) {
+								errorMessages.append('<div class="error-' + elementName + '">' + elementName + '</div>');
+							}else{
+								jQuery('.error-' + elementName).show();
+							}
 						}
 					}
 				});
 				
-				if(bindEvents){
-					console.log('Events binded');
-					var currentOption = {};
-					currentOption[elementIdorName] = rules;
-					
-					// Bind events to validate on the fly
-					switch(elementType){
-						case 'text':
-						case 'email':
-						case 'number':
-						case 'textarea':
-							element.unbind('keyup.customValidation-' + elementName).bind('keyup.customValidation-' + elementName, function(e){
-								return customValidation(currentOption, false);
+				var currentOption = {};
+				currentOption[elementIdorName] = rules;
+				
+				// Bind events to validate on the fly
+				switch(elementType){
+					case 'text':
+					case 'email':
+					case 'number':
+					case 'textarea':
+						element.unbind('keyup.customValidation-' + elementName).bind('keyup.customValidation-' + elementName, function(e){
+							customValidation(currentOption);
+						});
+					break;
+					case 'radio':
+					case 'checkbox':
+						jQuery('input[name=' + elementIdorName + ']').each(function (){
+							jQuery(this).unbind('click.customValidation-' + elementName).bind('click.customValidation-' + elementName, function(e){
+								customValidation(currentOption);
 							});
-						break;
-						case 'radio':
-						case 'checkbox':
-							jQuery('input[name=' + elementIdorName + ']').each(function (){
-								jQuery(this).unbind('click.customValidation-' + elementName).bind('click.customValidation-' + elementName, function(e){
-									return customValidation(currentOption, false);
-								});
-							});
-						break;
-						case 'select':
-						case 'select-one':
-						case 'select-multiple':
-							element.unbind('change.customValidation-' + elementName).bind('change.customValidation-' + elementName, function(e){
-								return customValidation(currentOption, false);
-							});
-						break;
-					}
+						});
+					break;
+					case 'select':
+					case 'select-one':
+					case 'select-multiple':
+						element.unbind('change.customValidation-' + elementName).bind('change.customValidation-' + elementName, function(e){
+							customValidation(currentOption);
+						});
+					break;
 				}
 			});
 			
@@ -231,6 +235,11 @@
 		}
 	</script>
 	<body>
+		<div id="errorContainer">
+			<div>The following field have errors:</div>
+			<div id="errorMessages"></div>
+		</div>
+		<br /><br />
 		<input type="text" name="name" id="name" />
 		<br /><br />
 		<input type="email" name="email" id="email" />
